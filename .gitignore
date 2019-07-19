@@ -1,0 +1,4 @@
+stl/
+processed/
+__pycache__/
+.DS_Store
