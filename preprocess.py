@@ -34,6 +34,14 @@ if __name__ == "__main__":
     #This will be input data
     polydata = utils.ReadSTL('./stl/137')
     
+    #Decimation Test
+    # decimation = vtk.vtkDecimatePro()
+    # decimation.SetInputData(polydata)
+    # decimation.SetTargetReduction(0.8)
+    # decimation.Update()
+    # polydata = decimation.GetOutput()
+
+    
     #Chagne Vertex Color
     actor = utils.MakeActor(polydata)
     renderer.AddActor(actor)
@@ -53,7 +61,7 @@ if __name__ == "__main__":
     print(len(toothpoly_position), polydata.GetNumberOfPoints())
 
 
-    result_ids = vtk.vtkIdList()
+    result_ids = []
 
     locator = vtk.vtkPointLocator()
     locator.SetDataSet(polydata)

@@ -5,6 +5,7 @@ import utils
 import numpy as np
 import network, tf_util
 import tensorflow as tf
+from datetime import datetime
 
 # Initialize RenderWIndow
 renderWindow = vtk.vtkRenderWindow()
@@ -23,7 +24,6 @@ if __name__ == "__main__":
 
     #Import Input Data
     input_poly = utils.ReadSTL('./processed/input.stl')
-    input_actor = utils.MakeActor(input_poly)
     input_data = []
 
     for idx in range(input_poly.GetNumberOfPoints()):
@@ -32,37 +32,84 @@ if __name__ == "__main__":
     input_data = np.array(input_data)
     
 
-    renderer.AddActor(input_actor)
-    renderWindow.Render()
-
-
     #Import Ground-truth data
     with open('./processed/groundtruth', 'rb') as filehandler:
         # read the data as binary data stream
-        ground_truth_data = np.array(pickle.load(filehandler))
+        ground_truth_data = np.array(pickle.load(filehandler))\
+    #########################################################################################
+    #Subsasmple module
     
-    utils.Visualize_segmentation(input_poly, ground_truth_data)
-
     print(input_data.shape, ground_truth_data.shape)
 
-    renderWindow.Render()
-    print("this is ground-truth")
-    iren.Start()
+    subsample_idx = np.random.choice( np.arange(input_data.shape[0]), 32768 )
 
+    subsample_input = []
+    subsample_gt = []
+
+    for idx in subsample_idx:
+        subsample_input.append( input_data[idx] )
+        subsample_gt.append( ground_truth_data[idx] )
+
+    subsample_input = np.array(subsample_input)
+    subsample_gt = np.array(subsample_gt)
+
+    subsample_polydata = utils.PoitncloudToMesh(subsample_input)
+    ##########################################################################################
+
+    #Make Actor, Visualize
+    input_actor = utils.MakeActor(subsample_polydata)
+    input_actor.GetProperty().SetPointSize(1)
+    renderer.AddActor(input_actor)
+ 
     print("start training")
 
-    num_point = input_data.shape[0]
+    num_point = subsample_input.shape[0]
     input_tensor = tf.placeholder(tf.float32, shape=(1, num_point, 3))
-    gt_tensor = tf.placeholder(tf.int32, shape=(1))
+    gt_tensor = tf.placeholder(tf.int32, shape=(1, num_point))
     is_training = tf.placeholder(tf.bool)
-
-
     output_tensor = network.get_model(input_tensor, is_training)
+    output_data_tensor  = tf.cast(tf.greater(output_tensor[:,:,1], output_tensor[:,:,0]), tf.float32, name="output_ejshim")
+    
+    loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=gt_tensor, logits=output_tensor)
+    loss_op = tf.reduce_mean(loss)
 
+    optimizer = tf.train.AdamOptimizer(1e-4, 0.9)
+    train_op = optimizer.minimize(loss_op)
+    
+
+
+    ############################################################
     sess = tf.InteractiveSession()
     sess.run(tf.global_variables_initializer())
 
-    output = sess.run(output_tensor, feed_dict={input_tensor:[input_data], is_training:False})
+    starttime = datetime.now()
+
+    for i in range(100):
+        [output_data, loss, _] = sess.run([output_data_tensor, loss_op, train_op], feed_dict={input_tensor:[subsample_input], gt_tensor:[subsample_gt], is_training:True})
+
+
+        print(loss)
+        utils.Visualize_segmentation(subsample_polydata, output_data[0])
+        renderWindow.Render()
+
+
+
+
+    
+    
+
+
+
+    iren.Start()
+
+
+    
+
+
+
+
+
+
 
     
     
