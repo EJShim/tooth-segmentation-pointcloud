@@ -1,4 +1,28 @@
 import vtk
+import numpy as np
+def UpsampleGroundTruth(subsampled_gt, input_data, subsample_idx):    
+
+    upsampled_gt = np.zeros((input_data.GetNumberOfPoints(),))
+
+    for idx, data in enumerate(subsampled_gt):
+        upsampled_gt[ subsample_idx[idx] ] = data
+
+
+    locator = vtk.vtkPointLocator()
+    locator.SetDataSet(input_data)
+
+    for idx, value in enumerate(upsampled_gt):
+        if value == 1.0:
+            position = input_data.GetPoint(idx)
+            id_list = vtk.vtkIdList()
+            locator.FindClosestNPoints(7, position, id_list)
+
+            for point_id in range(id_list.GetNumberOfIds()):
+                upsampled_gt[ id_list.GetId(point_id) ] = 1.0
+
+    
+    return upsampled_gt
+
 
 def PoitncloudToMesh(pointcloud):
     output_points = vtk.vtkPoints()
@@ -19,6 +43,7 @@ def PoitncloudToMesh(pointcloud):
     output_polydata.SetVerts(output_vertices) # vertex 정보를 입력
     output_polydata.GetPointData().SetScalars(output_colors) # 위에서 지정한 색 입력
     output_polydata.Modified()
+
 
 
     return output_polydata
@@ -59,7 +84,7 @@ def Visualize_segmentation(polydata, segmentationData):
         if gt == 1:
             polydata.GetPointData().GetScalars().SetTuple(idx, [0, 255, 0])
         else:
-            polydata.GetPointData().GetScalars().SetTuple(idx, [255, 255, 255])
+            polydata.GetPointData().GetScalars().SetTuple(idx, [255, 0, 0])
 
     polydata.GetPointData().Modified()
 
