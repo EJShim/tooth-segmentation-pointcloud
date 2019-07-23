@@ -10,6 +10,7 @@ from datetime import datetime
 # Initialize RenderWIndow
 renderWindow = vtk.vtkRenderWindow()
 renderWindow.SetSize(1000, 1000)
+renderWindow.SetFullScreen(True)
 renderer = vtk.vtkRenderer()
 renderWindow.AddRenderer(renderer)
 iren = vtk.vtkRenderWindowInteractor()
@@ -27,58 +28,33 @@ renderer.AddActor(txtActor)
 #renderWindow.Render()
 
 
+
 if __name__ == "__main__":
 
 
     #Import Input Data
     input_poly = utils.ReadSTL('./processed/input.stl')
-    input_data = []
+    original_data = []
 
     for idx in range(input_poly.GetNumberOfPoints()):
         position = input_poly.GetPoint(idx)
-        input_data.append(position)
-    input_data = np.array(input_data)
+        original_data.append(position)
+    original_data = np.array(original_data)
     
 
     #Import Ground-truth data
     with open('./processed/groundtruth', 'rb') as filehandler:
         # read the data as binary data stream
-        ground_truth_data = np.array(pickle.load(filehandler))\
+        original_ground_truth = np.array(pickle.load(filehandler))\
     #########################################################################################
     #Subsasmple module
-    
-    print(input_data.shape, ground_truth_data.shape)
 
-    subsample_idx = np.random.choice( np.arange(input_data.shape[0]), 32768 )
 
-    subsample_input = []
-    subsample_gt = []
 
-    for idx in subsample_idx:
-        subsample_input.append( input_data[idx] )
-        subsample_gt.append( ground_truth_data[idx] )
 
-    subsample_input = np.array(subsample_input)
-    subsample_gt = np.array(subsample_gt)
-
-    subsample_polydata = utils.PoitncloudToMesh(subsample_input)
-    ##########################################################################################
-
-    #Make Actor, Visualize
     input_actor = utils.MakeActor(input_poly)
     renderer.AddActor(input_actor)
-
-    subsample_actor = utils.MakeActor(subsample_polydata)
-    subsample_actor.GetProperty().SetPointSize(5)
-    renderer.AddActor(subsample_actor)
-
-    # upsampled_gt = utils.UpsampleGroundTruth(subsample_gt, input_poly, subsample_idx)
-    # utils.Visualize_segmentation(input_poly, upsampled_gt)
-
-
-
-    #renderWindow.Render()
-    #renderer.ResetCamera()
+    
     renderer.GetActiveCamera().Pitch(-30)
     renderer.ResetCamera()
     renderWindow.Render()
@@ -89,7 +65,14 @@ if __name__ == "__main__":
  
     print("start training")
 
-    num_point = subsample_input.shape[0]
+
+    #make 10 training data
+    train_set = utils.make_subsample_data(original_data, original_ground_truth, size=10)
+    test_data = utils.make_subsample_data(original_data, original_ground_truth)
+
+
+
+    num_point = train_set[0]['input'].shape[0]
     input_tensor = tf.placeholder(tf.float32, shape=(1, num_point, 3))
     gt_tensor = tf.placeholder(tf.int32, shape=(1, num_point))
     is_training = tf.placeholder(tf.bool)
@@ -108,18 +91,27 @@ if __name__ == "__main__":
     sess = tf.InteractiveSession()
     sess.run(tf.global_variables_initializer())
 
-    starttime = datetime.now()
+    for epoch in range(11):
 
-    for i in range(101):
-        [output_data, loss, _] = sess.run([output_data_tensor, loss_op, train_op], feed_dict={input_tensor:[subsample_input], gt_tensor:[subsample_gt], is_training:True})
+        for data in train_set:
 
-        
-        log = str(i) + "/" + "100, Loss : " +  str(loss)
-        txtActor.SetInput(log)
-        
-        #upsampled_pred = utils.UpsampleGroundTruth(output_data[0], input_poly, subsample_idx)        
-        utils.Visualize_segmentation(subsample_polydata, output_data[0])
-        renderWindow.Render()
+            input_data = data['input']
+            gt_data = data['gt']
+
+            [output_data, loss, _] = sess.run([output_data_tensor, loss_op, train_op], feed_dict={input_tensor:[input_data], gt_tensor:[gt_data], is_training:True})
+
+            
+            log = str(epoch) + "/" + "10, Loss : " +  str(loss)
+            txtActor.SetInput(log)
+            utils.update_segmentation(input_poly, output_data[0], data['idx'])
+            renderWindow.Render()
+
+
+        # #run test
+        # for data in test_data:
+        #     output_data = sess.run(output_data_tensor, feed_dict={input_tensor:[data['input']], is_training:False})                 
+        #     utils.update_segmentation(input_poly, output_data[0], data['idx'])
+        #     renderWindow.Render()
     
     txtActor.SetInput("Finished")
     txtActor.GetTextProperty().SetColor(0, 1, 0)

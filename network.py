@@ -60,8 +60,8 @@ def get_model(input_tensor, is_training, bn_decay = None):
     nn_idx = tf_util.knn(adj_matrix, k=k)
     edge_feature = tf_util.get_edge_feature(input_tensor, nn_idx=nn_idx, k=k)
 
-    with tf.variable_scope('transform_net1') as sc:
-        transform = input_transform_net(edge_feature, is_training, bn_decay, K=3)
+    with tf.variable_scope('transform_net1'):
+        transform = input_transform_net(edge_feature, is_training, bn_decay, K=input_tensor.get_shape()[2])
 
     input_tensor_transformed = tf.matmul(input_tensor, transform)
 

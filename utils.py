@@ -1,5 +1,50 @@
 import vtk
+import math
 import numpy as np
+
+
+color_preset = [
+    [255, 0, 0], #None-tooth
+    [0, 255, 0] # tooth
+]
+
+def make_subsample_data(original_data, original_ground_truth, size = None):
+
+    sample_size = 32768
+
+    if size == None:
+        size = math.ceil (original_ground_truth.shape[0] / sample_size)
+    output = []
+
+    index_list = np.arange(original_data.shape[0])
+    for i in range(size):        
+        #subsample
+        
+        if index_list.shape[0] < sample_size :
+            sample_list = np.array([i for i in np.arange(original_data.shape[0]) if i not in index_list]) 
+            subsample_idx = np.random.choice( sample_list, sample_size - index_list.shape[0], replace=False )
+            subsample_idx = np.concatenate( (subsample_idx, index_list) )
+            index_list = np.arange(original_data.shape[0])
+        else:
+            subsample_idx = np.random.choice( index_list, sample_size, replace=False )        
+            index_list = np.array([i for i in index_list if i not in subsample_idx])
+        
+
+        subsample_input = []
+        subsample_gt = []
+
+        for idx in subsample_idx:
+            subsample_input.append( original_data[idx] )
+            subsample_gt.append( original_ground_truth[idx] )
+
+        subsample_input = np.array(subsample_input)
+        subsample_gt = np.array(subsample_gt)
+
+        output.append({'idx':subsample_idx, 'input':subsample_input, 'gt':subsample_gt})
+
+    return output
+
+
 def UpsampleGroundTruth(subsampled_gt, input_data, subsample_idx):    
 
     upsampled_gt = np.zeros((input_data.GetNumberOfPoints(),))
@@ -8,17 +53,6 @@ def UpsampleGroundTruth(subsampled_gt, input_data, subsample_idx):
         upsampled_gt[ subsample_idx[idx] ] = data
 
 
-    locator = vtk.vtkPointLocator()
-    locator.SetDataSet(input_data)
-
-    for idx, value in enumerate(upsampled_gt):
-        if value == 1.0:
-            position = input_data.GetPoint(idx)
-            id_list = vtk.vtkIdList()
-            locator.FindClosestNPoints(7, position, id_list)
-
-            for point_id in range(id_list.GetNumberOfIds()):
-                upsampled_gt[ id_list.GetId(point_id) ] = 1.0
 
     
     return upsampled_gt
@@ -44,12 +78,10 @@ def PoitncloudToMesh(pointcloud):
     output_polydata.GetPointData().SetScalars(output_colors) # 위에서 지정한 색 입력
     output_polydata.Modified()
 
-
-
     return output_polydata
 
 
-def ReadSTL(filepath, vertexColor = [255, 255, 255]):
+def ReadSTL(filepath, vertexColor = [0, 0, 255]):
     reader = vtk.vtkSTLReader()
     reader.SetFileName(filepath)
     reader.Update()
@@ -86,5 +118,16 @@ def Visualize_segmentation(polydata, segmentationData):
         else:
             polydata.GetPointData().GetScalars().SetTuple(idx, [255, 0, 0])
 
+    polydata.GetPointData().Modified()
+
+
+    #Its deprecated
+
+def update_segmentation(polydata, outputdata, outputidx):
+
+    for outputidx, dataidx in enumerate(outputidx):
+        # color = [255, 0, 0]
+        # if outputdata[outputidx] == 1: color = [0, 255, 0]
+        polydata.GetPointData().GetScalars().SetTuple(dataidx, color_preset[int(outputdata[outputidx])])
     polydata.GetPointData().Modified()
 
