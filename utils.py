@@ -8,6 +8,64 @@ color_preset = [
     [0, 255, 0] # tooth
 ]
 
+def sort_by_position(position_data, gt_data):
+    sort_key = []
+    for position in position_data:
+        sort_key.append(np.mean(position))
+    sort_key = np.array(sort_key)
+
+    sort_key = sort_key.argsort()
+
+
+    position_data = position_data[sort_key]
+    gt_data = gt_data[sort_key]
+
+    return position_data, gt_data
+
+def normalize_input_data(data):
+    xmin = np.amin(data[:,0])
+    ymin = np.amin(data[:,1])
+    zmin = np.amin(data[:,2])
+    
+
+    data[:,0] = data[:,0] - xmin
+    data[:,1] = data[:,1] - ymin
+    data[:,2] = data[:,2] - zmin
+
+    xmax = np.amax(data[:,0])
+    ymax = np.amax(data[:,1])
+    zmax = np.amax(data[:,2])
+
+    data[:,0] = data[:,0] / xmax
+    data[:,1] = data[:,1] / ymax
+    data[:,2] = data[:,2] / zmax
+
+    xmax = np.amax(data[:,0])
+    ymax = np.amax(data[:,1])
+    zmax = np.amax(data[:,2])
+
+    
+    return data
+
+
+
+
+def sort_subsample(original_data, target_data):
+    sort_key = []
+    
+
+    # it is....complicated.....
+    axes = [-1000, -1000, -1000]
+    for idx in target_data:
+        sort_key.append(np.linalg.norm(original_data[idx]-axes))
+    sort_key = np.array(sort_key)
+    sort_key = sort_key.argsort()
+
+
+    output = target_data[sort_key]
+    return output
+
+
 def make_subsample_data(original_data, original_ground_truth, size = None):
 
     sample_size = 32768
@@ -23,11 +81,16 @@ def make_subsample_data(original_data, original_ground_truth, size = None):
         if index_list.shape[0] < sample_size :
             sample_list = np.array([i for i in np.arange(original_data.shape[0]) if i not in index_list]) 
             subsample_idx = np.random.choice( sample_list, sample_size - index_list.shape[0], replace=False )
-            subsample_idx = np.concatenate( (subsample_idx, index_list) )
+            subsample_idx = np.concatenate( (subsample_idx, index_list) )            
+
             index_list = np.arange(original_data.shape[0])
         else:
             subsample_idx = np.random.choice( index_list, sample_size, replace=False )        
             index_list = np.array([i for i in index_list if i not in subsample_idx])
+
+
+        #Sort order
+        subsample_idx = np.sort(subsample_idx)
         
 
         subsample_input = []

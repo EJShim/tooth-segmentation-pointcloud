@@ -34,13 +34,16 @@ if __name__ == "__main__":
 
     #Import Input Data
     input_poly = utils.ReadSTL('./processed/input.stl')
+
     original_data = []
 
     for idx in range(input_poly.GetNumberOfPoints()):
-        position = input_poly.GetPoint(idx)
+        position = np.array(input_poly.GetPoint(idx))
         original_data.append(position)
     original_data = np.array(original_data)
-    
+
+    original_data = utils.normalize_input_data(original_data)
+
 
     #Import Ground-truth data
     with open('./processed/groundtruth', 'rb') as filehandler:
@@ -50,7 +53,7 @@ if __name__ == "__main__":
     #Subsasmple module
 
 
-
+ 
 
     input_actor = utils.MakeActor(input_poly)
     renderer.AddActor(input_actor)
@@ -67,7 +70,7 @@ if __name__ == "__main__":
 
 
     #make 10 training data
-    train_set = utils.make_subsample_data(original_data, original_ground_truth, size=10)
+    train_set = utils.make_subsample_data(original_data, original_ground_truth, size=30)
     test_data = utils.make_subsample_data(original_data, original_ground_truth)
 
 
@@ -82,7 +85,7 @@ if __name__ == "__main__":
     loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=gt_tensor, logits=output_tensor)
     loss_op = tf.reduce_mean(loss)
 
-    optimizer = tf.train.AdamOptimizer(1e-4, 0.9)
+    optimizer = tf.train.AdamOptimizer(1e-4, 0.5)
     train_op = optimizer.minimize(loss_op)
     
 
@@ -91,7 +94,9 @@ if __name__ == "__main__":
     sess = tf.InteractiveSession()
     sess.run(tf.global_variables_initializer())
 
-    for epoch in range(11):
+    max_epoch = 31
+
+    for epoch in range(max_epoch):
 
         for data in train_set:
 
@@ -101,17 +106,17 @@ if __name__ == "__main__":
             [output_data, loss, _] = sess.run([output_data_tensor, loss_op, train_op], feed_dict={input_tensor:[input_data], gt_tensor:[gt_data], is_training:True})
 
             
-            log = str(epoch) + "/" + "10, Loss : " +  str(loss)
+            log = str(epoch) + "/" + str(max_epoch-1) + ", Loss : " +  str(loss)
             txtActor.SetInput(log)
-            utils.update_segmentation(input_poly, output_data[0], data['idx'])
+            #utils.update_segmentation(input_poly, output_data[0], data['idx'])
             renderWindow.Render()
 
 
-        # #run test
-        # for data in test_data:
-        #     output_data = sess.run(output_data_tensor, feed_dict={input_tensor:[data['input']], is_training:False})                 
-        #     utils.update_segmentation(input_poly, output_data[0], data['idx'])
-        #     renderWindow.Render()
+        #run test
+        for data in test_data:
+            output_data = sess.run(output_data_tensor, feed_dict={input_tensor:[data['input']], is_training:False})                 
+            utils.update_segmentation(input_poly, output_data[0], data['idx'])
+            renderWindow.Render()
     
     txtActor.SetInput("Finished")
     txtActor.GetTextProperty().SetColor(0, 1, 0)
