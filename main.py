@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
 
     #Import Ground-truth data
-    with open('./processed/groundtruth', 'rb') as filehandler:
+    with open('./processed/groundtruth_temp', 'rb') as filehandler:
         # read the data as binary data stream
         original_ground_truth = np.array(pickle.load(filehandler))\
     #########################################################################################
@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
 
     #make 10 training data
-    train_set = utils.make_subsample_data(original_data, original_ground_truth, size=30)
+    train_set = utils.make_subsample_data(original_data, original_ground_truth, size=10)
     test_data = utils.make_subsample_data(original_data, original_ground_truth)
 
 
@@ -80,8 +80,9 @@ if __name__ == "__main__":
     gt_tensor = tf.placeholder(tf.int32, shape=(1, num_point))
     is_training = tf.placeholder(tf.bool)
     output_tensor = network.get_model(input_tensor, is_training)
-    output_data_tensor  = tf.cast(tf.greater(output_tensor[:,:,1], output_tensor[:,:,0]), tf.float32, name="output_ejshim")
-    
+
+    output_data_tensor = tf.argmax(output_tensor, 2, name="output_ejshim")
+
     loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=gt_tensor, logits=output_tensor)
     loss_op = tf.reduce_mean(loss)
 
@@ -96,7 +97,7 @@ if __name__ == "__main__":
 
     max_epoch = 31
 
-    for epoch in range(max_epoch):
+    while True:
 
         for data in train_set:
 
@@ -106,10 +107,10 @@ if __name__ == "__main__":
             [output_data, loss, _] = sess.run([output_data_tensor, loss_op, train_op], feed_dict={input_tensor:[input_data], gt_tensor:[gt_data], is_training:True})
 
             
-            log = str(epoch) + "/" + str(max_epoch-1) + ", Loss : " +  str(loss)
-            txtActor.SetInput(log)
-            #utils.update_segmentation(input_poly, output_data[0], data['idx'])
-            renderWindow.Render()
+#             log = str(epoch) + "/" + str(max_epoch-1) + ", Loss : " +  str(loss)
+#             txtActor.SetInput(log)
+# #            utils.update_segmentation(input_poly, output_data[0], data['idx'])
+#             renderWindow.Render()
 
 
         #run test

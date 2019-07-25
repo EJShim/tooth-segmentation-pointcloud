@@ -2,12 +2,23 @@ import vtk
 import math
 import numpy as np
 
-
 color_preset = [
-    [255, 0, 0], #None-tooth
-    [0, 255, 0] # tooth
+    [255, 255, 255],    
+    [75, 0, 130],
+    [0, 0, 255],
+    [148, 0, 211],
+    [0, 255, 0],
+    [255, 255, 0],
+    [255, 127, 0],
+    [255, 0, 0],
+    [255, 0, 0],
+    [255, 127, 0],
+    [255, 255, 0],
+    [0, 255, 0],
+    [148, 0, 211],
+    [0, 0, 255],
+    [75, 0, 130],
 ]
-
 def sort_by_position(position_data, gt_data):
     sort_key = []
     for position in position_data:
@@ -144,7 +155,7 @@ def PoitncloudToMesh(pointcloud):
     return output_polydata
 
 
-def ReadSTL(filepath, vertexColor = [0, 0, 255]):
+def ReadSTL(filepath, vertexColor = [255, 255, 255]):
     reader = vtk.vtkSTLReader()
     reader.SetFileName(filepath)
     reader.Update()
@@ -169,22 +180,7 @@ def MakeActor(polydata):
 
     return actor
 
-def Visualize_segmentation(polydata, segmentationData):
-    if not polydata.GetNumberOfPoints() == len(segmentationData):
-        print("something wrong..")
-        return
-    
-    
-    for idx, gt in enumerate(segmentationData):
-        if gt == 1:
-            polydata.GetPointData().GetScalars().SetTuple(idx, [0, 255, 0])
-        else:
-            polydata.GetPointData().GetScalars().SetTuple(idx, [255, 0, 0])
 
-    polydata.GetPointData().Modified()
-
-
-    #Its deprecated
 
 def update_segmentation(polydata, outputdata, outputidx):
 

@@ -2,6 +2,7 @@ import vtk
 import os
 import pickle
 import utils
+import numpy as np
 
 #Initialize Database - maxilafacial
 
@@ -19,8 +20,6 @@ iren.SetInteractorStyle(interactorStyle)
 
 
 
-
-
 if __name__ == "__main__":
 
 
@@ -28,7 +27,12 @@ if __name__ == "__main__":
     tooth_data = []
     for mesh in data_list:
         dataIndex = int(mesh)
-        if dataIndex < 100 and dataIndex > 14: tooth_data.append( os.path.join('./stl',mesh) )    
+        if dataIndex < 100 and dataIndex > 14: tooth_data.append( os.path.join('./stl',mesh) )
+
+
+    print(tooth_data)
+
+    tooth_data.sort()
         
 
     #This will be input data
@@ -55,7 +59,7 @@ if __name__ == "__main__":
         # toothactor = MakeActor(toothpoly)
         # renderer.AddActor(toothactor)
         for i in range(toothpoly.GetNumberOfPoints()):
-             toothpoly_position.append(toothpoly.GetPoint(i))
+             toothpoly_position.append([toothpoly.GetPoint(i), idx+1])
 
 
     print(len(toothpoly_position), polydata.GetNumberOfPoints())
@@ -68,26 +72,22 @@ if __name__ == "__main__":
 
     for index, position in enumerate(toothpoly_position):
         temp_list = vtk.vtkIdList()
-        locator.FindClosestNPoints(1, position, temp_list)
+        locator.FindClosestNPoints(1, position[0], temp_list)
 
-        result_ids.append( temp_list.GetId(0) )
+        result_ids.append( [temp_list.GetId(0), position[1]] )
     
-    
-    for idx in result_ids:
-        polydata.GetPointData().GetScalars().SetTuple(idx, [0, 255, 0])        
+
 
 
     #Save Ground Truth Data
-    gt_data = []
+    gt_data = np.zeros((polydata.GetNumberOfPoints(),))
 
-    for i in range(polydata.GetNumberOfPoints()):
-        polydataTuple = polydata.GetPointData().GetScalars().GetTuple(i)
-        color = [polydataTuple[0], polydataTuple[1], polydataTuple[2]]
 
-        if color == [0, 255, 0]: gt_data.append(1)
-        else : gt_data.append(0)
+    for idx in result_ids:
+        polydata.GetPointData().GetScalars().SetTuple(idx[0], utils.color_preset[idx[1]])
+        gt_data[idx] = idx[1]
 
-    with open('./processed/groundtruth', 'wb') as filehandler:
+    with open('./processed/groundtruth_temp', 'wb') as filehandler:
         # store the data as binary data stream
         pickle.dump(gt_data, filehandler)
 
