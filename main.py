@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
 
     #make 10 training data
-    train_set = utils.make_subsample_data(original_data, original_ground_truth, size=10)
+    train_set = utils.make_subsample_data(original_data, original_ground_truth, size=100)
     test_data = utils.make_subsample_data(original_data, original_ground_truth)
 
 
@@ -97,8 +97,8 @@ if __name__ == "__main__":
 
     max_epoch = 31
 
-    while True:
-
+    for epoch in range(max_epoch):
+    #while True:
         for data in train_set:
 
             input_data = data['input']
@@ -107,10 +107,10 @@ if __name__ == "__main__":
             [output_data, loss, _] = sess.run([output_data_tensor, loss_op, train_op], feed_dict={input_tensor:[input_data], gt_tensor:[gt_data], is_training:True})
 
             
-#             log = str(epoch) + "/" + str(max_epoch-1) + ", Loss : " +  str(loss)
-#             txtActor.SetInput(log)
-# #            utils.update_segmentation(input_poly, output_data[0], data['idx'])
-#             renderWindow.Render()
+            log = str(epoch) + "/" + str(max_epoch-1) + ", Loss : " +  str(loss)
+            txtActor.SetInput(log)
+#            utils.update_segmentation(input_poly, output_data[0], data['idx'])
+            renderWindow.Render()
 
 
         #run test
