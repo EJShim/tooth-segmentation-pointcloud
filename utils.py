@@ -18,6 +18,7 @@ color_preset = [
     [148, 0, 211],
     [0, 0, 255],
     [75, 0, 130],
+    [0, 0, 255],
 ]
 def sort_by_position(position_data, gt_data):
     sort_key = []

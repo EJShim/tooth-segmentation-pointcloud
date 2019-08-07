@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
 
     #make 10 training data
-    train_set = utils.make_subsample_data(original_data, original_ground_truth, size=1)
+    train_set = utils.make_subsample_data(original_data, original_ground_truth, size=100)
     test_data = utils.make_subsample_data(original_data, original_ground_truth)
 
 
@@ -114,15 +114,15 @@ if __name__ == "__main__":
             
             log = str(epoch) + "/" + str(max_epoch-1) + ", Loss : " +  str(loss)
             txtActor.SetInput(log)
-            #utils.update_segmentation(input_poly, output_data[0], data['idx'])
-            renderWindow.Render()
-
-
-        #run test
-        for data in test_data:
-            output_data = sess.run(output_data_tensor, feed_dict={input_tensor:[data['input']], is_training:False})                 
             utils.update_segmentation(input_poly, output_data[0], data['idx'])
             renderWindow.Render()
+
+
+        # #run test
+        # for data in test_data:
+        #     output_data = sess.run(output_data_tensor, feed_dict={input_tensor:[data['input']], is_training:False})                 
+        #     utils.update_segmentation(input_poly, output_data[0], data['idx'])
+        #     renderWindow.Render()
     
     txtActor.SetInput("Finished")
     txtActor.GetTextProperty().SetColor(0, 1, 0)

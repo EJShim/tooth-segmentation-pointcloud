@@ -27,7 +27,7 @@ output_tensor = network.get_model(input_tensor, is_training)
 output_data_tensor = tf.argmax(output_tensor, 2, name="target_output")
 loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=gt_tensor, logits=output_tensor)
 loss_op = tf.reduce_mean(loss)
-optimizer = tf.train.AdamOptimizer(1e-3, 0.5)
+optimizer = tf.train.AdamOptimizer(1e-4, 0.5)
 train_op = optimizer.minimize(loss_op)
 
 
@@ -71,13 +71,14 @@ if __name__ == "__main__":
 
 
     #Make Training Data
-    input_data = []
+    input_patient_id = []
     for patient in patients:
-        input_data.append(patient['_id'])
+        input_patient_id.append(patient['_id'])
 
+    input_patient_id = input_patient_id[:1]
+    
 
-
-    max_epoch = 31
+    max_epoch = 300
 
 
 
@@ -89,18 +90,18 @@ if __name__ == "__main__":
     for epoch in range(max_epoch):
 
         #Save
-        save_path = "./weights/epoch_" + str(epoch)
-        builder = tf.saved_model.builder.SavedModelBuilder(save_path)
-        builder.add_meta_graph_and_variables(sess, ['ejshim'])
-        builder.save()
+        if epoch % 10 == 0:
+            save_path = "./weights/epoch_" + str(epoch)
+            builder = tf.saved_model.builder.SavedModelBuilder(save_path)
+            builder.add_meta_graph_and_variables(sess, ['ejshim'])
+            builder.save()
 
 
         #Shuffle input data
-        random.shuffle(input_data)
+        random.shuffle(input_patient_id)
 
-        for patientID in input_data:
+        for patientID in input_patient_id:
 
-            print("patientID : ", patientID)
             single_batch = make_training_data(patientID)
             
             input_data = single_batch['input']
@@ -109,4 +110,4 @@ if __name__ == "__main__":
 
             [loss, _] = sess.run([loss_op, train_op], feed_dict={input_tensor:[input_data], gt_tensor:[gt_data], is_training:True})
 
-            print("epoch", epoch, ", Loss :", loss)
+            print("epoch", epoch, ", Loss :", loss, "ID : ", patientID)
