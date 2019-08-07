@@ -163,7 +163,7 @@ def get_model(input_tensor, is_training, bn_decay = None):
     
     net = tf_util.dropout(net, keep_prob=0.5, is_training=is_training, scope='dp1')
     
-    net = tf_util.conv2d(net, 15, [1,1], padding='VALID', stride=[1,1],
+    net = tf_util.conv2d(net, 16, [1,1], padding='VALID', stride=[1,1],
                 activation_fn=None, scope='seg/output', is_dist=True)
 
 

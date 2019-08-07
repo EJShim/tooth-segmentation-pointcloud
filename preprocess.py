@@ -33,7 +33,6 @@ if __name__ == "__main__":
     print(tooth_data)
 
     tooth_data.sort()
-        
 
     #This will be input data
     polydata = utils.ReadSTL('./stl/137')

@@ -6,121 +6,107 @@ import numpy as np
 import network, tf_util
 import tensorflow as tf
 from datetime import datetime
+from bson import ObjectId
+import pymongo
+import gridfs
+import random
 
-# Initialize RenderWIndow
-renderWindow = vtk.vtkRenderWindow()
-renderWindow.SetSize(1000, 1000)
-renderWindow.SetFullScreen(True)
-renderer = vtk.vtkRenderer()
-renderWindow.AddRenderer(renderer)
-iren = vtk.vtkRenderWindowInteractor()
-iren.SetRenderWindow(renderWindow)
-interactorStyle = vtk.vtkInteractorStyleTrackballCamera()
-iren.SetInteractorStyle(interactorStyle)
 
-txtActor = vtk.vtkTextActor()
-txtActor.SetInput("Preparing...")
-txtActor.GetTextProperty().SetFontFamilyToArial()
-txtActor.GetTextProperty().SetFontSize(46)
-txtActor.GetTextProperty().SetColor(1,1,0)
-txtActor.SetDisplayPosition(100,900)
-renderer.AddActor(txtActor)
-#renderWindow.Render()
+db = pymongo.MongoClient().maxilafacial
+fileDB = gridfs.GridFS(db)
 
+
+
+#Graph Definition
+num_point = 32768 
+input_tensor = tf.placeholder(tf.float32, shape=(1, num_point, 3), name="target_input")
+gt_tensor = tf.placeholder(tf.int32, shape=(1, num_point))
+is_training = tf.placeholder(tf.bool, name="target_isTraining")
+output_tensor = network.get_model(input_tensor, is_training)
+
+output_data_tensor = tf.argmax(output_tensor, 2, name="target_output")
+loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=gt_tensor, logits=output_tensor)
+loss_op = tf.reduce_mean(loss)
+optimizer = tf.train.AdamOptimizer(1e-3, 0.5)
+train_op = optimizer.minimize(loss_op)
+
+
+
+def make_training_data(patientID):
+    
+    patient = db.patient.find_one({'_id':patientID})
+    mandible_data = db.fs.files.find_one({"_id":{"$in":  list(map(ObjectId, patient['data']) ) }, "dataIndex" : 137  })
+
+    mandible_file = fileDB.get( mandible_data['_id'] )
+
+    #Write Temp file
+    file_path = os.path.join('temp','temp.stl')
+    open(file_path, 'wb').write(mandible_file.read())
+
+
+    #Get Input data
+    polydata = utils.ReadSTL(file_path)
+    point_data = utils.GetPointData(polydata)
+    point_data = utils.normalize_input_data(point_data)
+
+
+    #Get Ground Truth Data
+    mandible_gt = patient["pointcloudGroundTruth"]["mandible"]
+    gt_data = utils.make_gt_data(mandible_gt, point_data.shape[0])
+
+    
+    train_set = utils.make_subsample_data(point_data, gt_data)
+
+
+
+    return train_set[0]
 
 
 if __name__ == "__main__":
 
-
-    #Import Input Data
-    input_poly = utils.ReadSTL('./processed/input.stl')
-
-    original_data = []
-
-    for idx in range(input_poly.GetNumberOfPoints()):
-        position = np.array(input_poly.GetPoint(idx))
-        original_data.append(position)
-    original_data = np.array(original_data)
-
-    original_data = utils.normalize_input_data(original_data)
+    patients = db.patient.find({})
 
 
-    #Import Ground-truth data
-    with open('./processed/groundtruth_temp', 'rb') as filehandler:
-        # read the data as binary data stream
-        original_ground_truth = np.array(pickle.load(filehandler))\
-    #########################################################################################
-    #Subsasmple module
+    count = 0
 
 
- 
-
-    input_actor = utils.MakeActor(input_poly)
-    renderer.AddActor(input_actor)
-    
-    renderer.GetActiveCamera().Pitch(-30)
-    renderer.ResetCamera()
-    renderWindow.Render()
-    #  iren.Start()
+    #Make Training Data
+    input_data = []
+    for patient in patients:
+        input_data.append(patient['_id'])
 
 
-
- 
-    print("start training")
-
-
-    #make 10 training data
-    train_set = utils.make_subsample_data(original_data, original_ground_truth, size=100)
-    test_data = utils.make_subsample_data(original_data, original_ground_truth)
-
-
-
-    num_point = train_set[0]['input'].shape[0]
-    input_tensor = tf.placeholder(tf.float32, shape=(1, num_point, 3))
-    gt_tensor = tf.placeholder(tf.int32, shape=(1, num_point))
-    is_training = tf.placeholder(tf.bool)
-    output_tensor = network.get_model(input_tensor, is_training)
-
-    output_data_tensor = tf.argmax(output_tensor, 2, name="output_ejshim")
-
-    loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=gt_tensor, logits=output_tensor)
-    loss_op = tf.reduce_mean(loss)
-
-    optimizer = tf.train.AdamOptimizer(1e-4, 0.5)
-    train_op = optimizer.minimize(loss_op)
-    
-
-
-    ############################################################
-    sess = tf.InteractiveSession()
-    sess.run(tf.global_variables_initializer())
 
     max_epoch = 31
 
+
+
+
+    sess = tf.InteractiveSession()
+    sess.run(tf.global_variables_initializer())
+
+
     for epoch in range(max_epoch):
-    #while True:
-        for data in train_set:
 
-            input_data = data['input']
-            gt_data = data['gt']
+        #Save
+        save_path = "./weights/epoch_" + str(epoch)
+        builder = tf.saved_model.builder.SavedModelBuilder(save_path)
+        builder.add_meta_graph_and_variables(sess, ['ejshim'])
+        builder.save()
 
-            [output_data, loss, _] = sess.run([output_data_tensor, loss_op, train_op], feed_dict={input_tensor:[input_data], gt_tensor:[gt_data], is_training:True})
 
+        #Shuffle input data
+        random.shuffle(input_data)
+
+        for patientID in input_data:
+
+            print("patientID : ", patientID)
+            single_batch = make_training_data(patientID)
             
-            log = str(epoch) + "/" + str(max_epoch-1) + ", Loss : " +  str(loss)
-            txtActor.SetInput(log)
-#            utils.update_segmentation(input_poly, output_data[0], data['idx'])
-            renderWindow.Render()
+            input_data = single_batch['input']
+            gt_data = single_batch['gt']
 
 
-        #run test
-        for data in test_data:
-            output_data = sess.run(output_data_tensor, feed_dict={input_tensor:[data['input']], is_training:False})                 
-            utils.update_segmentation(input_poly, output_data[0], data['idx'])
-            renderWindow.Render()
-    
-    txtActor.SetInput("Finished")
-    txtActor.GetTextProperty().SetColor(0, 1, 0)
-    renderWindow.Render()
+            [loss, _] = sess.run([loss_op, train_op], feed_dict={input_tensor:[input_data], gt_tensor:[gt_data], is_training:True})
 
-    iren.Start()
+            print("epoch", epoch, ", Loss :", loss)

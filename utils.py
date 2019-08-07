@@ -33,6 +33,15 @@ def sort_by_position(position_data, gt_data):
 
     return position_data, gt_data
 
+def make_gt_data(gtData, numberOfPoints):
+    result = np.zeros(shape=(numberOfPoints,))
+
+    for gt in gtData:
+        result[ gt['pointIndex'] ] = gt['label']
+
+
+    return result
+
 def normalize_input_data(data):
     xmin = np.amin(data[:,0])
     ymin = np.amin(data[:,1])
@@ -77,9 +86,7 @@ def sort_subsample(original_data, target_data):
     return output
 
 
-def make_subsample_data(original_data, original_ground_truth, size = None):
-
-    sample_size = 32768
+def make_subsample_data(original_data, original_ground_truth, size = None, sample_size = 32768):
 
     if size == None:
         size = math.ceil (original_ground_truth.shape[0] / sample_size)
@@ -169,6 +176,17 @@ def ReadSTL(filepath, vertexColor = [255, 255, 255]):
     polydata.GetPointData().SetScalars(polydataColor)
 
     return polydata
+
+def GetPointData(polyData):
+
+    result = []
+    for idx in range(polyData.GetNumberOfPoints()):
+        position = np.array(polyData.GetPoint(idx))
+        result.append(position)
+
+    result = np.array(result)
+
+    return result
 
 def MakeActor(polydata):
     
