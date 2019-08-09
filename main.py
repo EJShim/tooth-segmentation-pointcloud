@@ -10,6 +10,7 @@ from bson import ObjectId
 import pymongo
 import gridfs
 import random
+import pickle
 
 
 db = pymongo.MongoClient().maxilafacial
@@ -18,7 +19,7 @@ fileDB = gridfs.GridFS(db)
 
 
 #Graph Definition
-num_point = 32768 
+num_point = 1024 
 input_tensor = tf.placeholder(tf.float32, shape=(1, num_point, 3), name="target_input")
 gt_tensor = tf.placeholder(tf.int32, shape=(1, num_point))
 is_training = tf.placeholder(tf.bool, name="target_isTraining")
@@ -54,8 +55,14 @@ def make_training_data(patientID):
     mandible_gt = patient["pointcloudGroundTruth"]["mandible"]
     gt_data = utils.make_gt_data(mandible_gt, point_data.shape[0])
 
+    #Save GT DAta
+    with open('./temp/temp_gt', 'wb') as filehandler:
+        # store the data as binary data stream
+        pickle.dump(gt_data, filehandler)
+
+
     
-    train_set = utils.make_subsample_data(point_data, gt_data)
+    train_set = utils.make_subsample_data(point_data, gt_data, sample_size=num_point)
 
 
 
@@ -75,10 +82,10 @@ if __name__ == "__main__":
     for patient in patients:
         input_patient_id.append(patient['_id'])
 
-    input_patient_id = input_patient_id[:1]
+    input_patient_id = [input_patient_id[1]]
     
 
-    max_epoch = 300
+    max_epoch = 500
 
 
 

@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
 
     #Import Input Data
-    input_poly = utils.ReadSTL('./processed/input.stl')
+    input_poly = utils.ReadSTL('./processed/temp.stl')
 
     original_data = []
 
@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
 
     #Import Ground-truth data
-    with open('./processed/groundtruth_temp', 'rb') as filehandler:
+    with open('./processed/temp_gt', 'rb') as filehandler:
         # read the data as binary data stream
         original_ground_truth = np.array(pickle.load(filehandler))
     #########################################################################################
@@ -70,10 +70,10 @@ if __name__ == "__main__":
 
 
     #make 10 training data
-    train_set = utils.make_subsample_data(original_data, original_ground_truth, size=100)
-    test_data = utils.make_subsample_data(original_data, original_ground_truth)
+    train_set = utils.make_subsample_data(original_data, original_ground_truth, size=100, sample_size=1024)
+    test_data = utils.make_subsample_data(original_data, original_ground_truth, sample_size=1024)
 
-
+        
 
     num_point = train_set[0]['input'].shape[0]
     input_tensor = tf.placeholder(tf.float32, shape=(1, num_point, 3), name="target_input")
@@ -98,7 +98,7 @@ if __name__ == "__main__":
     max_epoch = 31
 
     for epoch in range(max_epoch):
-        #Save
+        # #Save
         # save_path = "./weights/epoch_" + str(epoch)
         # builder = tf.saved_model.builder.SavedModelBuilder(save_path)
         # builder.add_meta_graph_and_variables(sess, ['ejshim'])
@@ -114,15 +114,15 @@ if __name__ == "__main__":
             
             log = str(epoch) + "/" + str(max_epoch-1) + ", Loss : " +  str(loss)
             txtActor.SetInput(log)
-            utils.update_segmentation(input_poly, output_data[0], data['idx'])
+            #utils.update_segmentation(input_poly, output_data[0], data['idx'])
             renderWindow.Render()
 
 
-        # #run test
-        # for data in test_data:
-        #     output_data = sess.run(output_data_tensor, feed_dict={input_tensor:[data['input']], is_training:False})                 
-        #     utils.update_segmentation(input_poly, output_data[0], data['idx'])
-        #     renderWindow.Render()
+        #run test
+        for data in test_data:
+            output_data = sess.run(output_data_tensor, feed_dict={input_tensor:[data['input']], is_training:False})                 
+            utils.update_segmentation(input_poly, output_data[0], data['idx'])
+            renderWindow.Render()
     
     txtActor.SetInput("Finished")
     txtActor.GetTextProperty().SetColor(0, 1, 0)
