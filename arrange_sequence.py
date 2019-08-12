@@ -4,6 +4,7 @@ import pickle
 import utils
 import numpy as np
 from datetime import datetime
+import vtk.util.numpy_support as vtk_np
 
 # Initialize RenderWIndow
 renderWindow = vtk.vtkRenderWindow()
@@ -25,9 +26,9 @@ def sort_pointIndex(polydata):
 
     bounds = polydata.GetBounds() 
     grid_locator = np.empty(shape=(100,100,100, 0)).tolist()
+    num_points = polydata.GetNumberOfPoints()
 
-
-    for i in range(polydata.GetNumberOfPoints()):
+    for i in range(num_points):
 
         position = polydata.GetPoint(i)
         position = [position[0], position[1], position[2]]
@@ -50,6 +51,29 @@ def sort_pointIndex(polydata):
 
     for index_list in grid_locator:
         result += index_list
+
+    #Make New Polydata
+    sorted_points = vtk.vtkPoints()
+    for idx in range(num_points):
+        sorted_points.InsertNextPoint(polydata.GetPoint(result[idx]))
+
+    #polydata.SetPoints(sorted_points)
+
+    num_cells = polydata.GetPolys().GetNumberOfCells()
+    sorted_polys = vtk.vtkCellArray()
+
+    
+    # sorted_polys.InsertNextCell(3);
+    # sorted_polys.InsertCellPoint();
+
+    for idx in range(num_cells):
+        idlist = vtk.vtkIdList()
+        polydata.GetCellPoints(idx, idlist)
+        sorted_polys.InsertNextCell(3)
+        sorted_polys.InsertCellPoint(result[idlist.GetId(0)])
+        sorted_polys.InsertCellPoint(result[idlist.GetId(1)])
+        sorted_polys.InsertCellPoint(result[idlist.GetId(2)])        
+    #polydata.SetPolys(sorted_polys)
 
     
     return result
