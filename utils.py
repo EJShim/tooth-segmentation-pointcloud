@@ -200,9 +200,9 @@ def MakeActor(polydata):
     return actor
 
 
-def sort_pointIndex(polydata):
+def sort_pointIndex(polydata, resolution = 100):
     bounds = polydata.GetBounds() 
-    grid_locator = np.empty(shape=(100,100,100, 0)).tolist()
+    grid_locator = np.empty(shape=(resolution,resolution,resolution, 0)).tolist()
     num_points = polydata.GetNumberOfPoints()
 
     for i in range(num_points):
@@ -211,14 +211,14 @@ def sort_pointIndex(polydata):
         position = polydata.GetPoint(i)
         position = [position[0], position[1], position[2]]
         position[0] -= bounds[0]
-        position[0] /= bounds[1] - bounds[0]
-        position[0] = int(position[0] * 99)
+        position[0] /= bounds[1] - bounds[0] + 1
+        position[0] = int(position[0] * resolution)
         position[1] -= bounds[2]
-        position[1] /= bounds[3] - bounds[2]
-        position[1] = int(position[1] * 99)
+        position[1] /= bounds[3] - bounds[2] + 1
+        position[1] = int(position[1] * resolution)
         position[2] -= bounds[4]
-        position[2] /= bounds[5] - bounds[4]
-        position[2] = int(position[2] * 99)
+        position[2] /= bounds[5] - bounds[4] + 1
+        position[2] = int(position[2] * resolution)
 
         #Set Index Information
         grid_locator[position[0]][position[1]][position[2]].append(i)
