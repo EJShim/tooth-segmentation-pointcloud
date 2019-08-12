@@ -170,7 +170,7 @@ def ReadSTL(filepath, vertexColor = [255, 255, 255]):
 
     polydata = reader.GetOutput()
 
-    polydataColor = vtk.vtkUnsignedCharArray()
+    polydataColor = vtk.vtkFloatArray()
     polydataColor.SetNumberOfComponents(3)
     for i in range(polydata.GetNumberOfPoints()):
         polydataColor.InsertNextTuple(vertexColor)
@@ -199,6 +199,42 @@ def MakeActor(polydata):
 
     return actor
 
+
+def sort_pointIndex(polydata):
+
+    result = []
+
+
+    bounds = polydata.GetBounds() 
+    grid_locator = np.empty(shape=(100,100,100, 0)).tolist()
+
+
+    for i in range(polydata.GetNumberOfPoints()):
+
+        position = polydata.GetPoint(i)
+        position = [position[0], position[1], position[2]]
+        position[0] -= bounds[0]
+        position[0] /= bounds[1] - bounds[0]
+        position[0] = int(position[0] * 99)
+        position[1] -= bounds[2]
+        position[1] /= bounds[3] - bounds[2]
+        position[1] = int(position[1] * 99)
+        position[2] -= bounds[4]
+        position[2] /= bounds[5] - bounds[4]
+        position[2] = int(position[2] * 99)
+
+        grid_locator[position[0]][position[1]][position[2]].append(i)
+
+    grid_locator = np.array(grid_locator)
+    grid_locator = grid_locator.flatten()
+
+    result = []
+
+    for index_list in grid_locator:
+        result += index_list
+
+    
+    return result
 
 
 def update_segmentation(polydata, outputdata, outputidx):
