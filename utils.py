@@ -201,16 +201,13 @@ def MakeActor(polydata):
 
 
 def sort_pointIndex(polydata):
-
-    result = []
-
-
     bounds = polydata.GetBounds() 
     grid_locator = np.empty(shape=(100,100,100, 0)).tolist()
+    num_points = polydata.GetNumberOfPoints()
 
+    for i in range(num_points):
 
-    for i in range(polydata.GetNumberOfPoints()):
-
+        #Get Normalized Position -> Get 3D Grid Index
         position = polydata.GetPoint(i)
         position = [position[0], position[1], position[2]]
         position[0] -= bounds[0]
@@ -223,18 +220,38 @@ def sort_pointIndex(polydata):
         position[2] /= bounds[5] - bounds[4]
         position[2] = int(position[2] * 99)
 
+        #Set Index Information
         grid_locator[position[0]][position[1]][position[2]].append(i)
 
+    #Flatten, 
     grid_locator = np.array(grid_locator)
     grid_locator = grid_locator.flatten()
 
-    result = []
-
+    #Get Result Indices
+    result = []    
     for index_list in grid_locator:
         result += index_list
-
     
-    return result
+
+    #Make New Polydata, Inverse results for triangle
+    inverse_result = [0] * num_points
+    sorted_points = vtk.vtkPoints()
+    for idx in range(num_points):
+        sorted_points.InsertNextPoint(polydata.GetPoint(result[idx]))
+        inverse_result[result[idx]] = idx
+    polydata.SetPoints(sorted_points)
+
+    #Make Triangles
+    num_cells = polydata.GetPolys().GetNumberOfCells()
+    sorted_polys = vtk.vtkCellArray()
+    for idx in range(num_cells):
+        idlist = vtk.vtkIdList()
+        polydata.GetCellPoints(idx, idlist)
+        sorted_polys.InsertNextCell(3)
+        sorted_polys.InsertCellPoint(inverse_result[idlist.GetId(0)])
+        sorted_polys.InsertCellPoint(inverse_result[idlist.GetId(1)])
+        sorted_polys.InsertCellPoint(inverse_result[idlist.GetId(2)])
+    polydata.SetPolys(sorted_polys)
 
 
 def update_segmentation(polydata, outputdata, outputidx):
