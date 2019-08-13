@@ -1,6 +1,18 @@
 import vtk
 import math
 import numpy as np
+import pymongo
+import gridfs
+from bson import ObjectId
+import os
+import pickle
+
+
+
+db = pymongo.MongoClient().maxilafacial
+fileDB = gridfs.GridFS(db)
+
+
 
 color_preset = [
     [255, 255, 255],    
@@ -170,7 +182,7 @@ def ReadSTL(filepath, vertexColor = [255, 255, 255]):
 
     polydata = reader.GetOutput()
 
-    polydataColor = vtk.vtkFloatArray()
+    polydataColor = vtk.vtkUnsignedCharArray()
     polydataColor.SetNumberOfComponents(3)
     for i in range(polydata.GetNumberOfPoints()):
         polydataColor.InsertNextTuple(vertexColor)
@@ -259,4 +271,42 @@ def update_segmentation(polydata, outputdata, outputidx):
         # if outputdata[outputidx] == 1: color = [0, 255, 0]
         polydata.GetPointData().GetScalars().SetTuple(dataidx, color_preset[int(outputdata[outputidx])])
     polydata.GetPointData().Modified()
+
+
+
+def make_training_data(patientID, num_point = 1024):
+
+    patient = db.patient.find_one({'_id':patientID})
+    mandible_data = db.fs.files.find_one({"_id":{"$in":  list(map(ObjectId, patient['data']) ) }, "dataIndex" : 137  })
+
+    mandible_file = fileDB.get( mandible_data['_id'] )
+
+    #Write Temp file
+    file_path = os.path.join('temp','temp.stl')
+    open(file_path, 'wb').write(mandible_file.read())
+
+
+    #Get Input data
+    polydata = ReadSTL(file_path)
+    sort_pointIndex(polydata)
+    point_data = GetPointData(polydata)
+    point_data = normalize_input_data(point_data)
+
+
+    #Get Ground Truth Data
+    mandible_gt = patient["pointcloudGroundTruth"]["mandible"]
+    gt_data = make_gt_data(mandible_gt, point_data.shape[0])
+
+    #Save GT DAta
+    with open('./temp/temp_gt', 'wb') as filehandler:
+        # store the data as binary data stream
+        pickle.dump(gt_data, filehandler)
+
+
+    
+    train_set = make_subsample_data(point_data, gt_data, sample_size=num_point)
+
+
+
+    return train_set[0]
 

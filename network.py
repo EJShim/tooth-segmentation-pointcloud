@@ -53,7 +53,7 @@ def get_model(input_tensor, is_training, bn_decay = None):
     weight_decay = 0.0
     num_point = input_tensor.get_shape()[1].value
     
-    k = 40
+    k = 10
 
     #Transform Net
     adj_matrix = tf_util.pairwise_distance(input_tensor)

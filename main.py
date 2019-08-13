@@ -33,44 +33,11 @@ train_op = optimizer.minimize(loss_op)
 
 
 
-def make_training_data(patientID):
-    
-    patient = db.patient.find_one({'_id':patientID})
-    mandible_data = db.fs.files.find_one({"_id":{"$in":  list(map(ObjectId, patient['data']) ) }, "dataIndex" : 137  })
-
-    mandible_file = fileDB.get( mandible_data['_id'] )
-
-    #Write Temp file
-    file_path = os.path.join('temp','temp.stl')
-    open(file_path, 'wb').write(mandible_file.read())
-
-
-    #Get Input data
-    polydata = utils.ReadSTL(file_path)
-    point_data = utils.GetPointData(polydata)
-    point_data = utils.normalize_input_data(point_data)
-
-
-    #Get Ground Truth Data
-    mandible_gt = patient["pointcloudGroundTruth"]["mandible"]
-    gt_data = utils.make_gt_data(mandible_gt, point_data.shape[0])
-
-    #Save GT DAta
-    with open('./temp/temp_gt', 'wb') as filehandler:
-        # store the data as binary data stream
-        pickle.dump(gt_data, filehandler)
-
-
-    
-    train_set = utils.make_subsample_data(point_data, gt_data, sample_size=num_point)
-
-
-
-    return train_set[0]
-
 
 if __name__ == "__main__":
 
+    utils.make_training_data(ObjectId("5cd38c139b1fd2e2fcb3a61f"))
+    exit()
     patients = db.patient.find({})
 
 
@@ -109,7 +76,7 @@ if __name__ == "__main__":
 
         for patientID in input_patient_id:
 
-            single_batch = make_training_data(patientID)
+            single_batch = utils.make_training_data(patientID)
             
             input_data = single_batch['input']
             gt_data = single_batch['gt']

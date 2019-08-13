@@ -36,6 +36,7 @@ if __name__ == "__main__":
 
     #This will be input data
     polydata = utils.ReadSTL('./stl/137')
+    utils.sort_pointIndex(polydata)
     
     #Decimation Test
     # decimation = vtk.vtkDecimatePro()
