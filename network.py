@@ -55,21 +55,21 @@ def get_model(input_tensor, is_training, bn_decay = None):
     
     k = 10
 
+    # #Transform Net
+    # adj_matrix = tf_util.pairwise_distance(input_tensor)
+    # nn_idx = tf_util.knn(adj_matrix, k=k)
+    # edge_feature = tf_util.get_edge_feature(input_tensor, nn_idx=nn_idx, k=k)
+
+    # with tf.variable_scope('transform_net1'):
+    #     transform = input_transform_net(edge_feature, is_training, bn_decay, K=input_tensor.get_shape()[2])
+
+    # input_tensor_transformed = tf.matmul(input_tensor, transform)
+
+
     #Transform Net
     adj_matrix = tf_util.pairwise_distance(input_tensor)
     nn_idx = tf_util.knn(adj_matrix, k=k)
     edge_feature = tf_util.get_edge_feature(input_tensor, nn_idx=nn_idx, k=k)
-
-    with tf.variable_scope('transform_net1'):
-        transform = input_transform_net(edge_feature, is_training, bn_decay, K=input_tensor.get_shape()[2])
-
-    input_tensor_transformed = tf.matmul(input_tensor, transform)
-
-
-    #Transform Net
-    adj_matrix = tf_util.pairwise_distance(input_tensor_transformed)
-    nn_idx = tf_util.knn(adj_matrix, k=k)
-    edge_feature = tf_util.get_edge_feature(input_tensor_transformed, nn_idx=nn_idx, k=k)
 
     out1_1 = tf_util.conv2d(edge_feature, 64, [1,1],
                        padding='VALID', stride=[1,1],

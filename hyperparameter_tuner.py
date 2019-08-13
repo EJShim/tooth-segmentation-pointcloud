@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
 
     #Import Input Data
-    input_poly = utils.ReadSTL('./processed/temp.stl')
+    input_poly = utils.ReadSTL('./temp/temp.stl')
     utils.sort_pointIndex(input_poly)
 
 
@@ -48,7 +48,7 @@ if __name__ == "__main__":
 
 
     #Import Ground-truth data
-    with open('./processed/temp_gt', 'rb') as filehandler:
+    with open('./temp/temp_gt', 'rb') as filehandler:
         # read the data as binary data stream
         original_ground_truth = np.array(pickle.load(filehandler))
     #########################################################################################

@@ -273,9 +273,8 @@ def update_segmentation(polydata, outputdata, outputidx):
     polydata.GetPointData().Modified()
 
 
-
-def make_training_data(patientID, num_point = 1024):
-
+def save_training_data(patientID, num_point = 1024):
+    
     patient = db.patient.find_one({'_id':patientID})
     mandible_data = db.fs.files.find_one({"_id":{"$in":  list(map(ObjectId, patient['data']) ) }, "dataIndex" : 137  })
 
@@ -302,11 +301,33 @@ def make_training_data(patientID, num_point = 1024):
         # store the data as binary data stream
         pickle.dump(gt_data, filehandler)
 
+def make_training_data(patientID, size = None, sample_size = 1024):
 
-    
-    train_set = make_subsample_data(point_data, gt_data, sample_size=num_point)
+    patient = db.patient.find_one({'_id':patientID})
+    mandible_data = db.fs.files.find_one({"_id":{"$in":  list(map(ObjectId, patient['data']) ) }, "dataIndex" : 137  })
+
+    mandible_file = fileDB.get( mandible_data['_id'] )
+
+    #Write Temp file
+    file_path = os.path.join('temp','temp_training.stl')
+    open(file_path, 'wb').write(mandible_file.read())
+
+
+    #Get Input data
+    polydata = ReadSTL(file_path)
+    sort_pointIndex(polydata)
+    point_data = GetPointData(polydata)
+    point_data = normalize_input_data(point_data)
+
+
+    #Get Ground Truth Data
+    mandible_gt = patient["pointcloudGroundTruth"]["mandible"]
+    gt_data = make_gt_data(mandible_gt, point_data.shape[0])
+
+     
+    train_set = make_subsample_data(point_data, gt_data, size=size, sample_size=sample_size)
 
 
 
-    return train_set[0]
+    return train_set
 
