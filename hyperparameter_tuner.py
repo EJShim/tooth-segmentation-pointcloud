@@ -33,7 +33,9 @@ if __name__ == "__main__":
 
 
     #Import Input Data
-    input_poly = utils.ReadSTL('./processed/temp.stl')
+    input_poly = utils.ReadSTL('./temp/temp.stl')
+    utils.sort_pointIndex(input_poly)
+
 
     original_data = []
 
@@ -46,7 +48,7 @@ if __name__ == "__main__":
 
 
     #Import Ground-truth data
-    with open('./processed/temp_gt', 'rb') as filehandler:
+    with open('./temp/temp_gt', 'rb') as filehandler:
         # read the data as binary data stream
         original_ground_truth = np.array(pickle.load(filehandler))
     #########################################################################################
@@ -58,20 +60,21 @@ if __name__ == "__main__":
     input_actor = utils.MakeActor(input_poly)
     renderer.AddActor(input_actor)
     
-    renderer.GetActiveCamera().Pitch(-30)
+    renderer.GetActiveCamera().Pitch(-45)
     renderer.ResetCamera()
     renderWindow.Render()
     #  iren.Start()
 
 
+    sample_size = 32768
 
+    print("Initialization!")
  
-    print("start training")
 
 
     #make 10 training data
-    train_set = utils.make_subsample_data(original_data, original_ground_truth, size=100, sample_size=1024)
-    test_data = utils.make_subsample_data(original_data, original_ground_truth, sample_size=1024)
+    train_set = utils.make_subsample_data(original_data, original_ground_truth, size=100, sample_size=sample_size)
+    test_data = utils.make_subsample_data(original_data, original_ground_truth, sample_size=sample_size)
 
         
 
@@ -95,14 +98,18 @@ if __name__ == "__main__":
     sess = tf.InteractiveSession()
     sess.run(tf.global_variables_initializer())
 
+
+    
+    print("start training")
+
     max_epoch = 31
 
     for epoch in range(max_epoch):
-        # #Save
-        # save_path = "./weights/epoch_" + str(epoch)
-        # builder = tf.saved_model.builder.SavedModelBuilder(save_path)
-        # builder.add_meta_graph_and_variables(sess, ['ejshim'])
-        # builder.save()
+        #Save
+        save_path = "./weights/epoch_" + str(epoch)
+        builder = tf.saved_model.builder.SavedModelBuilder(save_path)
+        builder.add_meta_graph_and_variables(sess, ['ejshim'])
+        builder.save()
         #while True:
         for data in train_set:
             

@@ -1,6 +1,18 @@
 import vtk
 import math
 import numpy as np
+import pymongo
+import gridfs
+from bson import ObjectId
+import os
+import pickle
+
+
+
+db = pymongo.MongoClient().maxilafacial
+fileDB = gridfs.GridFS(db)
+
+
 
 color_preset = [
     [255, 255, 255],    
@@ -170,7 +182,7 @@ def ReadSTL(filepath, vertexColor = [255, 255, 255]):
 
     polydata = reader.GetOutput()
 
-    polydataColor = vtk.vtkFloatArray()
+    polydataColor = vtk.vtkUnsignedCharArray()
     polydataColor.SetNumberOfComponents(3)
     for i in range(polydata.GetNumberOfPoints()):
         polydataColor.InseartNextTuple(vertexColor)
@@ -202,7 +214,7 @@ def MakeActor(polydata):
 
 def sort_pointIndex(polydata, resolution = 100):
     bounds = polydata.GetBounds() 
-    grid_locator = np.empty(shape=(resolution,resolution,resolution, 0)).tolist()
+    grid_locator = np.empty(shape=(resolution*resolution*resolution, 0)).tolist()
     num_points = polydata.GetNumberOfPoints()
 
     for i in range(num_points):
@@ -220,12 +232,10 @@ def sort_pointIndex(polydata, resolution = 100):
         position[2] /= bounds[5] - bounds[4] + 1
         position[2] = int(position[2] * resolution)
 
+        grid_index = position[0] * resolution * resolution + position[1] * resolution + position[2];
         #Set Index Information
-        grid_locator[position[0]][position[1]][position[2]].append(i)
+        grid_locator[grid_index].append(i)
 
-    #Flatten, 
-    grid_locator = np.array(grid_locator)
-    grid_locator = grid_locator.flatten()
 
     #Get Result Indices
     result = []    
@@ -244,8 +254,8 @@ def sort_pointIndex(polydata, resolution = 100):
     #Make Triangles
     num_cells = polydata.GetPolys().GetNumberOfCells()
     sorted_polys = vtk.vtkCellArray()
-    for idx in range(num_cells):
-        idlist = vtk.vtkIdList()
+    idlist = vtk.vtkIdList()
+    for idx in range(num_cells):        
         polydata.GetCellPoints(idx, idlist)
         sorted_polys.InsertNextCell(3)
         sorted_polys.InsertCellPoint(inverse_result[idlist.GetId(0)])
@@ -261,4 +271,63 @@ def update_segmentation(polydata, outputdata, outputidx):
         # if outputdata[outputidx] == 1: color = [0, 255, 0]
         polydata.GetPointData().GetScalars().SetTuple(dataidx, color_preset[int(outputdata[outputidx])])
     polydata.GetPointData().Modified()
+
+
+def save_training_data(patientID, num_point = 1024):
+    
+    patient = db.patient.find_one({'_id':patientID})
+    mandible_data = db.fs.files.find_one({"_id":{"$in":  list(map(ObjectId, patient['data']) ) }, "dataIndex" : 137  })
+
+    mandible_file = fileDB.get( mandible_data['_id'] )
+
+    #Write Temp file
+    file_path = os.path.join('temp','temp.stl')
+    open(file_path, 'wb').write(mandible_file.read())
+
+
+    #Get Input data
+    polydata = ReadSTL(file_path)
+    sort_pointIndex(polydata)
+    point_data = GetPointData(polydata)
+    point_data = normalize_input_data(point_data)
+
+
+    #Get Ground Truth Data
+    mandible_gt = patient["pointcloudGroundTruth"]["mandible"]
+    gt_data = make_gt_data(mandible_gt, point_data.shape[0])
+
+    #Save GT DAta
+    with open('./temp/temp_gt', 'wb') as filehandler:
+        # store the data as binary data stream
+        pickle.dump(gt_data, filehandler)
+
+def make_training_data(patientID, size = None, sample_size = 1024):
+
+    patient = db.patient.find_one({'_id':patientID})
+    mandible_data = db.fs.files.find_one({"_id":{"$in":  list(map(ObjectId, patient['data']) ) }, "dataIndex" : 137  })
+
+    mandible_file = fileDB.get( mandible_data['_id'] )
+
+    #Write Temp file
+    file_path = os.path.join('temp','temp_training.stl')
+    open(file_path, 'wb').write(mandible_file.read())
+
+
+    #Get Input data
+    polydata = ReadSTL(file_path)
+    sort_pointIndex(polydata)
+    point_data = GetPointData(polydata)
+    point_data = normalize_input_data(point_data)
+
+
+    #Get Ground Truth Data
+    mandible_gt = patient["pointcloudGroundTruth"]["mandible"]
+    gt_data = make_gt_data(mandible_gt, point_data.shape[0])
+
+     
+    train_set = make_subsample_data(point_data, gt_data, size=size, sample_size=sample_size)
+
+
+
+    return train_set
 

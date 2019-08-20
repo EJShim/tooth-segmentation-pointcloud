@@ -3,3 +3,6 @@ processed/
 __pycache__/
 .DS_Store
 weights/
+.vscode/
+build/
+temp/
