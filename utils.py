@@ -173,7 +173,7 @@ def ReadSTL(filepath, vertexColor = [255, 255, 255]):
     polydataColor = vtk.vtkFloatArray()
     polydataColor.SetNumberOfComponents(3)
     for i in range(polydata.GetNumberOfPoints()):
-        polydataColor.InsertNextTuple(vertexColor)
+        polydataColor.InseartNextTuple(vertexColor)
     polydata.GetPointData().SetScalars(polydataColor)
 
     return polydata
@@ -251,7 +251,7 @@ def sort_pointIndex(polydata, resolution = 100):
         sorted_polys.InsertCellPoint(inverse_result[idlist.GetId(0)])
         sorted_polys.InsertCellPoint(inverse_result[idlist.GetId(1)])
         sorted_polys.InsertCellPoint(inverse_result[idlist.GetId(2)])
-    polydata.SetPolys(sorted_polys)
+    #polydata.SetPolys(sorted_polys)
 
 
 def update_segmentation(polydata, outputdata, outputidx):
