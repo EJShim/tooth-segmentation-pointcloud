@@ -24,19 +24,18 @@ iren.SetRenderWindow(renWin)
 
 def clustering_network_tensorflow(shape):
     
-    centroid_index = 0
-    k = 50
-    
     input_tensor = tf.placeholder(dtype=tf.float32, shape=shape)
+    centroid_index_tensor = tf.placeholder(dtype = tf.int32)
+    k_tensor = tf.placeholder(dtype = tf.int32)
 
     #Centroid 위치
-    centroid_tensor = input_tensor[centroid_index]
+    centroid_tensor = input_tensor[centroid_index_tensor]
 
     #Calculate distance between basis and all the pointclouds
     distance_tensor = tf.reduce_sum(tf.square(tf.subtract( input_tensor, centroid_tensor )), 1) * -1.0
 
     # print(distance_tensor)
-    k_means_clustering = tf.nn.top_k(distance_tensor, k)
+    k_means_clustering = tf.nn.top_k(distance_tensor, k_tensor)
 
     output_tensor = k_means_clustering.indices
 
@@ -45,7 +44,7 @@ def clustering_network_tensorflow(shape):
     
 
 
-    return input_tensor, output_tensor
+    return input_tensor, centroid_index_tensor, k_tensor, output_tensor
 
 
     ## Get stl file's point size number function
@@ -100,14 +99,40 @@ def make_point_actor(point_data):
     return actor
 
 
+def subsample(data, size = 32768):
+    index_list = np.arange(data.shape[0])
+    print(index_list)
+
+    subsample_idx = np.random.choice( index_list, size, replace=False )
+
+
+    #Sort order
+    subsample_idx = np.sort(subsample_idx)
+    
+
+    result = []
+    
+
+    for idx in subsample_idx:
+        result.append( data[idx] )        
+
+    result = np.array(result)
+
+    return result
+    
+
+
+
 
 if __name__ == "__main__":
 
     #STL 데이터 불러와서 point data 로 정리하기
-    vessel_data = get_point_from_stl('processed/input.stl')
+    vessel_data = get_point_from_stl('processed/temp.stl')
 
     point_data = np.array(vessel_data)
-        
+    point_data = subsample(point_data)
+    
+    print(point_data.shape)
     
     # Rendering 위해서 actor 만들기
     actor = make_point_actor(point_data)
@@ -115,7 +140,7 @@ if __name__ == "__main__":
 
 
     # Tensorflow 로 K-means clustering 정의
-    input_tensor, output_tensor = clustering_network_tensorflow(point_data.shape)
+    input_tensor, centroid_index_tensor, k_tensor, output_tensor = clustering_network_tensorflow(point_data.shape)
 
     # Initialization
     sess = tf.InteractiveSession()
@@ -123,7 +148,9 @@ if __name__ == "__main__":
 
 
     # output 에서 top-50 개의 후보군 index 를 만들어놓음
-    output = sess.run(output_tensor, feed_dict={input_tensor : point_data})
+    output = sess.run(output_tensor, feed_dict={input_tensor : point_data, 
+                                                centroid_index_tensor : 0,
+                                                k_tensor : 40})
     
 
 

@@ -200,12 +200,9 @@ if __name__ == "__main__":
 
     sample_data = train_set[0]['input']
 
-    print(sample_data.shape)
-
     
     input_tensor = tf.placeholder(tf.float32, shape=(None, sample_data.shape[0], sample_data.shape[1]), name="target_input")
     gt_tensor = tf.placeholder(tf.int32, shape=(None, sample_data.shape[0]))
-    print(input_tensor, gt_tensor)
     
     is_training = tf.placeholder(tf.bool, name="target_isTraining")
     output_tensor = get_model(input_tensor, is_training)
@@ -215,6 +212,7 @@ if __name__ == "__main__":
 
     loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=gt_tensor, logits=output_tensor)
     loss_op = tf.reduce_mean(loss)
+    
 
     optimizer = tf.train.AdamOptimizer(1e-4, 0.5)
     train_op = optimizer.minimize(loss_op)
@@ -225,6 +223,8 @@ if __name__ == "__main__":
     ############################################################
     sess = tf.InteractiveSession()
     sess.run(tf.global_variables_initializer())
+
+    exit()
 
 
     
@@ -245,6 +245,8 @@ if __name__ == "__main__":
             gt_data = data['gt']
 
             [output_data, loss, _] = sess.run([output_data_tensor, loss_op, train_op], feed_dict={input_tensor:[input_data], gt_tensor:[gt_data], is_training:True})
+
+            print(loss)
 
             
             log = str(epoch) + "/" + str(max_epoch-1) + ", Loss : " +  str(loss)
