@@ -19,7 +19,7 @@ fileDB = gridfs.GridFS(db)
 
 
 #Graph Definition
-num_point = 32768 
+num_point = 1024 
 input_tensor = tf.placeholder(tf.float32, shape=(1, num_point, 3), name="target_input")
 gt_tensor = tf.placeholder(tf.int32, shape=(1, num_point))
 is_training = tf.placeholder(tf.bool, name="target_isTraining")
@@ -48,7 +48,6 @@ if __name__ == "__main__":
     for data_name in data_path_list:
         data_path = os.path.join("processed", data_name)
         data_loaded = np.load(data_path)
-
         input_data.append(data_loaded['input'])
         gt_data.append(data_loaded['gt'])
 

@@ -9,7 +9,7 @@ import gridfs
 
 db = pymongo.MongoClient().maxilafacial
 fileDB = gridfs.GridFS(db)
-sample_size = 32768
+sample_size = 1024
 
 
 if __name__ == "__main__":
@@ -19,7 +19,7 @@ if __name__ == "__main__":
     for element in patients:
         patientID = element["_id"]
         
-        train_data = utils.make_training_data(patientID, size=10, sample_size = sample_size)
+        train_data = utils.make_training_data(patientID, size=100, sample_size = sample_size)
         
         input_data = []
         gt_data = []

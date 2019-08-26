@@ -66,7 +66,7 @@ if __name__ == "__main__":
     #  iren.Start()
 
 
-    sample_size = 32768
+    sample_size = 1024
 
     print("Initialization!")
  
@@ -88,6 +88,9 @@ if __name__ == "__main__":
 
     loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=gt_tensor, logits=output_tensor)
     loss_op = tf.reduce_mean(loss)
+
+    regularizer = tf.add_n([tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'bias' not in v.name])#
+    loss_op = loss_op + 0.001*regularizer
 
     optimizer = tf.train.AdamOptimizer(1e-4, 0.5)
     train_op = optimizer.minimize(loss_op)
