@@ -10,7 +10,7 @@ import time
 # Initialize RenderWIndow
 renderWindow = vtk.vtkRenderWindow()
 renderWindow.SetSize(1000, 1000)
-#renderWindow.SetFullScreen(True)
+renderWindow.SetFullScreen(True)
 renderer = vtk.vtkRenderer()
 renderWindow.AddRenderer(renderer)
 iren = vtk.vtkRenderWindowInteractor()

@@ -184,8 +184,9 @@ def ReadSTL(filepath, vertexColor = [255, 255, 255]):
 
     polydataColor = vtk.vtkUnsignedCharArray()
     polydataColor.SetNumberOfComponents(3)
+    polydataColor.SetNumberOfTuples(polydata.GetNumberOfPoints())
     for i in range(polydata.GetNumberOfPoints()):
-        polydataColor.InsertNextTuple(vertexColor)
+        polydataColor.SetTuple3(i, vertexColor[0], vertexColor[1], vertexColor[2])
     polydata.GetPointData().SetScalars(polydataColor)
 
     return polydata
