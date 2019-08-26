@@ -127,7 +127,7 @@ def subsample(data, size = 32768):
 if __name__ == "__main__":
 
     #STL 데이터 불러와서 point data 로 정리하기
-    vessel_data = get_point_from_stl('processed/temp.stl')
+    vessel_data = get_point_from_stl('temp/temp.stl')
 
     point_data = np.array(vessel_data)
     point_data = subsample(point_data)
