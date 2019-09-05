@@ -18,6 +18,8 @@ if __name__ == "__main__":
 
     for element in patients:
         patientID = element["_id"]
+
+        if not element['status']: continue
         
         train_data = utils.make_training_data(patientID, size=100, sample_size = sample_size)
         
