@@ -19,9 +19,11 @@ fileDB = gridfs.GridFS(db)
 
 
 #Graph Definition
-num_point = 1024 
-input_tensor = tf.placeholder(tf.float32, shape=(1, num_point, 3), name="target_input")
-gt_tensor = tf.placeholder(tf.int32, shape=(1, num_point))
+num_point = 4096 
+batch_size = 4
+
+input_tensor = tf.placeholder(tf.float32, shape=(None, num_point, 3), name="target_input")
+gt_tensor = tf.placeholder(tf.int32, shape=(None, num_point))
 is_training = tf.placeholder(tf.bool, name="target_isTraining")
 output_tensor = network.get_model(input_tensor, is_training)
 
@@ -80,11 +82,16 @@ if __name__ == "__main__":
         gt_data = gt_data[p]
 
 
-        for idx, input_batch in enumerate(input_data):
+        #for idx, input_batch in enumerate(input_data):
+        idx = 0
+        #for data in train_set:
+        while idx < len(input_data):
+            
+            input_batch = input_data[idx:idx+batch_size]
+            gt_batch = gt_data[idx:idx+batch_size]
+            idx = idx+batch_size
 
-            gt_batch = gt_data[idx]
 
-
-            [loss, _] = sess.run([loss_op, train_op], feed_dict={input_tensor:[input_batch], gt_tensor:[gt_batch], is_training:True})
+            [loss, _] = sess.run([loss_op, train_op], feed_dict={input_tensor:input_batch, gt_tensor:gt_batch, is_training:True})
 
             print("epoch", epoch, ", Loss :", loss)

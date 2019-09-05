@@ -91,7 +91,9 @@ class TrainingThread(QThread):
 
 
         self.signal_log.emit("Start Training...")
-        for epoch in range(self.max_epoch):
+        #for epoch in range(self.max_epoch):
+        while True:
+            epoch = 1
             #Save
             # save_path = "./weights/epoch_" + str(epoch)
             # builder = tf.saved_model.builder.SavedModelBuilder(save_path)

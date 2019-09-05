@@ -9,7 +9,7 @@ import gridfs
 
 db = pymongo.MongoClient().maxilafacial
 fileDB = gridfs.GridFS(db)
-sample_size = 1024
+sample_size = 4096
 
 
 if __name__ == "__main__":
