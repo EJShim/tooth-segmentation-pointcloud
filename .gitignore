@@ -1,8 +1,10 @@
 stl/
-processed/
 __pycache__/
 .DS_Store
 weights/
 .vscode/
 build/
 temp/
+32768/
+processed*/
+temp*.py
