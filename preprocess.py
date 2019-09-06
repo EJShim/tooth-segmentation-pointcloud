@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
         if not element['status']: continue
         
-        train_data = utils.make_training_data(patientID, size=100, sample_size = sample_size)
+        train_data = utils.make_training_data(cl, size=100, sample_size = sample_size)
         
         input_data = []
         gt_data = []
