@@ -319,7 +319,7 @@ def make_training_data(patientID, size = None, sample_size = 1024):
 
     #Get Input data
     polydata = ReadSTL(file_path)
-    sort_pointIndex(polydata)
+    #sort_pointIndex(polydata)
     point_data = GetPointData(polydata)
     point_data = normalize_input_data(point_data)
 

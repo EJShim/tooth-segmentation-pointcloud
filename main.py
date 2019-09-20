@@ -37,6 +37,14 @@ optimizer = tf.train.AdamOptimizer(1e-4, 0.5)
 train_op = optimizer.minimize(loss_op)
 
 
+def apply_random_rotation(input_batch):
+    print(input_batch.shape)
+
+
+    transform = vtk.vtkTransform()
+    print(transform.GetMatrix())
+    exit()
+
 
 
 if __name__ == "__main__":
@@ -62,7 +70,8 @@ if __name__ == "__main__":
 
 
     sess = tf.InteractiveSession()
-    sess.run(tf.global_variables_initializer())
+    init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
+    sess.run(init)
     
 
     max_epoch = 100

@@ -166,7 +166,6 @@ def conv2d(inputs,
             outputs = batch_norm_for_conv2d(outputs, is_training, bn_decay=bn_decay, scope='bn', is_dist=is_dist)
 
         
-
         if activation_fn is not None:
             outputs = activation_fn(outputs)
         return outputs
@@ -335,14 +334,14 @@ def fully_connected(inputs,
     """
     with tf.variable_scope(scope) as sc:
         num_input_units = inputs.get_shape()[-1].value
+
         weights = _variable_with_weight_decay('weights',
                                             shape=[num_input_units, num_outputs],
                                             use_xavier=use_xavier,
                                             stddev=stddev,
                                             wd=weight_decay)
         outputs = tf.matmul(inputs, weights)
-        biases = _variable_on_cpu('biases', [num_outputs],
-                                tf.constant_initializer(0.0))
+        biases = _variable_on_cpu('biases', [num_outputs], tf.constant_initializer(0.0))
         outputs = tf.nn.bias_add(outputs, biases)
         
         if bn:
