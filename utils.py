@@ -215,17 +215,18 @@ def MakeActor(polydata):
 
     return actor
 
-
-def sort_pointIndex(polydata, resolution = 100):
-    bounds = polydata.GetBounds() 
+def ArrangeNormalizedPointData(pointdata, gt, resolution = 100):
+    bounds = [np.min(pointdata[:,0]), np.max(pointdata[:,0]), np.min(pointdata[:,1]), np.max(pointdata[:,1]), np.min(pointdata[:,2]), np.max(pointdata[:,2])]
+    bounds = [bounds[0]*resolution, bounds[1]*resolution, bounds[2]*resolution, bounds[3]*resolution, bounds[4]*resolution, bounds[5]*resolution]
     grid_locator = np.empty(shape=(resolution*resolution*resolution, 0)).tolist()
-    num_points = polydata.GetNumberOfPoints()
+    num_points = pointdata.shape[0]
 
     for i in range(num_points):
 
         #Get Normalized Position -> Get 3D Grid Index
-        position = polydata.GetPoint(i)
-        position = [position[0], position[1], position[2]]
+        position = pointdata[i]
+        position = [position[0]*resolution, position[1]*resolution, position[2]*resolution]
+        #position = [position[0], position[1], position[2]]
         position[0] -= bounds[0]
         position[0] /= bounds[1] - bounds[0] + 1
         position[0] = int(position[0] * resolution)
@@ -236,7 +237,50 @@ def sort_pointIndex(polydata, resolution = 100):
         position[2] /= bounds[5] - bounds[4] + 1
         position[2] = int(position[2] * resolution)
 
-        grid_index = position[0] * resolution * resolution + position[1] * resolution + position[2];
+        grid_index = position[0] * resolution * resolution + position[1] * resolution + position[2]
+        #Set Index Information
+        
+
+        grid_locator[grid_index].append(i)
+
+
+    #Get Result Indices
+    result = []    
+    for index_list in grid_locator:
+        result += index_list
+
+    sorted_points = []
+    sorted_gt = []
+    for idx in range(num_points):
+        sorted_points.append(pointdata[result[idx]])
+        sorted_gt.append(gt[result[idx]])
+    
+    return np.array(sorted_points), np.array(sorted_gt)
+
+
+def ArrangePolyData(polydata, resolution = 100):
+    bounds = polydata.GetBounds()
+    bounds = [bounds[0]*100, bounds[1]*resolution, bounds[2]*resolution, bounds[3]*resolution, bounds[4]*resolution, bounds[5]*resolution]
+    grid_locator = np.empty(shape=(resolution*resolution*resolution, 0)).tolist()
+    num_points = polydata.GetNumberOfPoints()
+
+    for i in range(num_points):
+
+        #Get Normalized Position -> Get 3D Grid Index
+        position = polydata.GetPoint(i) 
+        position = [position[0]*resolution, position[1]*resolution, position[2]*resolution]        
+        #position = [position[0], position[1], position[2]]
+        position[0] -= bounds[0]
+        position[0] /= bounds[1] - bounds[0] + 1
+        position[0] = int(position[0] * resolution)
+        position[1] -= bounds[2]
+        position[1] /= bounds[3] - bounds[2] + 1
+        position[1] = int(position[1] * resolution)
+        position[2] -= bounds[4]
+        position[2] /= bounds[5] - bounds[4] + 1
+        position[2] = int(position[2] * resolution)
+
+        grid_index = position[0] * resolution * resolution + position[1] * resolution + position[2]
         #Set Index Information
         grid_locator[grid_index].append(i)
 
@@ -291,7 +335,7 @@ def save_training_data(patientID, num_point = 1024):
 
     #Get Input data
     polydata = ReadSTL(file_path)
-    sort_pointIndex(polydata)
+    ArrangePolyData(polydata)
     point_data = GetPointData(polydata)
     point_data = normalize_input_data(point_data)
 

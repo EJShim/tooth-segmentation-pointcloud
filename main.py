@@ -11,6 +11,7 @@ import pymongo
 import gridfs
 import random
 import pickle
+import random
 
 
 db = pymongo.MongoClient().maxilafacial
@@ -37,13 +38,29 @@ optimizer = tf.train.AdamOptimizer(1e-4, 0.5)
 train_op = optimizer.minimize(loss_op)
 
 
-def apply_random_rotation(input_batch):
-    print(input_batch.shape)
+def apply_random_rotation(input_batch, gt_batch):    
 
-
+    #Add Transform
     transform = vtk.vtkTransform()
-    print(transform.GetMatrix())
-    exit()
+    transform.RotateX(random.randrange(-45, 45))
+    transform.RotateY(random.randrange(-45, 45))
+    transform.RotateZ(random.randrange(-45, 45))
+    transform.Update()
+
+    
+    result_batch = []
+    result_gt_batch = []
+    for idx, batch in enumerate(input_batch):
+
+        gt = gt_batch[idx]
+        result = np.array([*map(transform.TransformPoint, batch.tolist() )])
+        #Rearrange
+        result, gt_result = utils.ArrangeNormalizedPointData(result, gt)
+        result_batch.append(result)
+        result_gt_batch.append(gt_result)
+
+
+    return result_batch, result_gt_batch
 
 
 
@@ -98,6 +115,12 @@ if __name__ == "__main__":
             
             input_batch = input_data[idx:idx+batch_size]
             gt_batch = gt_data[idx:idx+batch_size]
+            
+            
+            ####Random Transform
+            input_batch, gt_batch = apply_random_rotation(input_batch, gt_batch)
+
+            
             idx = idx+batch_size
 
 
