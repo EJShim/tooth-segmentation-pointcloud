@@ -271,7 +271,6 @@ def CenterPolyData(polydata):
 
     polydata = transformFilter.GetOutput()
     
-    
     ##Normalize
     num_points = polydata.GetNumberOfPoints()
     boundingBox = polydata.GetBounds()
