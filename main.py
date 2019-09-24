@@ -38,9 +38,9 @@ optimizer = tf.train.AdamOptimizer(1e-4, 0.5)
 train_op = optimizer.minimize(loss_op)
 
 
-def apply_random_rotation(input_batch, gt_batch):    
+def apply_random_rotation(input_batch):    
 
-    #Add Transform
+    #Add Transform, center-origined
     transform = vtk.vtkTransform()
     transform.RotateX(random.randrange(-45, 45))
     transform.RotateY(random.randrange(-45, 45))
@@ -49,18 +49,12 @@ def apply_random_rotation(input_batch, gt_batch):
 
     
     result_batch = []
-    result_gt_batch = []
-    for idx, batch in enumerate(input_batch):
-
-        gt = gt_batch[idx]
-        result = np.array([*map(transform.TransformPoint, batch.tolist() )])
-        #Rearrange
-        result, gt_result = utils.ArrangeNormalizedPointData(result, gt)
+    for batch in input_batch:
+        result = np.array([*map(transform.TransformPoint, batch.tolist() )])        
         result_batch.append(result)
-        result_gt_batch.append(gt_result)
 
 
-    return result_batch, result_gt_batch
+    return result_batch
 
 
 
@@ -117,12 +111,14 @@ if __name__ == "__main__":
             gt_batch = gt_data[idx:idx+batch_size]
             
             
-            ####Random Transform
-            #input_batch, gt_batch = apply_random_rotation(input_batch, gt_batch)
+            ####Random Rotation!
+            input_batch= apply_random_rotation(input_batch)
+
+            #Random noise or sequence shuffle??
+
 
             
             idx = idx+batch_size
-
 
             [loss, _] = sess.run([loss_op, train_op], feed_dict={input_tensor:input_batch, gt_tensor:gt_batch, is_training:True})
 

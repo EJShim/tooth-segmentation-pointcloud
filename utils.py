@@ -285,7 +285,7 @@ def CenterPolyData(polydata):
 
     for idx in range(num_points):
         position = polydata.GetPoint(idx)
-        position_normalized = [(position[0] - boundingBox[0]) / normalizeRange, (position[1] - boundingBox[2]) / normalizeRange, (position[2] - boundingBox[4]) / normalizeRange]
+        position_normalized = [position[0] / normalizeRange, position[1] / normalizeRange, position[2] / normalizeRange]
         polydata.GetPoints().SetPoint(idx, position_normalized)
     polydata.GetPoints().Modified()
 
@@ -370,7 +370,6 @@ def save_training_data(patientID, num_point = 1024):
     #Get Input data
     polydata = ReadSTL(file_path)
     polydata = CenterPolyData(polydata)
-    #ArrangePolyData(polydata)
     point_data = GetPointData(polydata)
 
 
@@ -397,8 +396,7 @@ def make_training_data(patientID, size = None, sample_size = 1024):
 
     #Get Input data
     polydata = ReadSTL(file_path)
-    polydata = CenterPolyData(polydata)
-    #ArrangePolyData(polydata)
+    polydata = CenterPolyData(polydata)    
     point_data = GetPointData(polydata)
 
 
