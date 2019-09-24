@@ -257,10 +257,45 @@ def ArrangeNormalizedPointData(pointdata, gt, resolution = 100):
     
     return np.array(sorted_points), np.array(sorted_gt)
 
+def CenterPolyData(polydata):
+    center = polydata.GetCenter()
+
+    transform = vtk.vtkTransform()
+    transform.Translate(-center[0], -center[1], -center[2])
+    transform.Update()
+
+    transformFilter = vtk.vtkTransformPolyDataFilter()
+    transformFilter.SetInputData(polydata)
+    transformFilter.SetTransform(transform)
+    transformFilter.Update()
+
+    polydata = transformFilter.GetOutput()
+    
+    
+    ##Normalize
+    num_points = polydata.GetNumberOfPoints()
+    boundingBox = polydata.GetBounds()
+    
+    xRange = boundingBox[1] - boundingBox[0]
+    yRange = boundingBox[3] - boundingBox[2]
+    zRange = boundingBox[5] - boundingBox[4]
+
+    
+    normalizeRange = np.max([xRange, yRange, zRange])
+
+
+    for idx in range(num_points):
+        position = polydata.GetPoint(idx)
+        position_normalized = [(position[0] - boundingBox[0]) / normalizeRange, (position[1] - boundingBox[2]) / normalizeRange, (position[2] - boundingBox[4]) / normalizeRange]
+        polydata.GetPoints().SetPoint(idx, position_normalized)
+    polydata.GetPoints().Modified()
+
+    return polydata
+
 
 def ArrangePolyData(polydata, resolution = 100):
     bounds = polydata.GetBounds()
-    bounds = [bounds[0]*100, bounds[1]*resolution, bounds[2]*resolution, bounds[3]*resolution, bounds[4]*resolution, bounds[5]*resolution]
+    bounds = [bounds[0]*resolution, bounds[1]*resolution, bounds[2]*resolution, bounds[3]*resolution, bounds[4]*resolution, bounds[5]*resolution]
     grid_locator = np.empty(shape=(resolution*resolution*resolution, 0)).tolist()
     num_points = polydata.GetNumberOfPoints()
 
@@ -335,9 +370,9 @@ def save_training_data(patientID, num_point = 1024):
 
     #Get Input data
     polydata = ReadSTL(file_path)
-    ArrangePolyData(polydata)
+    polydata = CenterPolyData(polydata)
+    #ArrangePolyData(polydata)
     point_data = GetPointData(polydata)
-    point_data = normalize_input_data(point_data)
 
 
     #Get Ground Truth Data
@@ -363,16 +398,16 @@ def make_training_data(patientID, size = None, sample_size = 1024):
 
     #Get Input data
     polydata = ReadSTL(file_path)
-    #sort_pointIndex(polydata)
+    polydata = CenterPolyData(polydata)
+    #ArrangePolyData(polydata)
     point_data = GetPointData(polydata)
-    point_data = normalize_input_data(point_data)
 
 
     #Get Ground Truth Data
     mandible_gt = patient["pointcloudGroundTruth"]["mandible"]
+
     gt_data = make_gt_data(mandible_gt, point_data.shape[0])
 
-     
     train_set = make_subsample_data(point_data, gt_data, size=size, sample_size=sample_size)
 
 

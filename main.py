@@ -118,7 +118,7 @@ if __name__ == "__main__":
             
             
             ####Random Transform
-            input_batch, gt_batch = apply_random_rotation(input_batch, gt_batch)
+            #input_batch, gt_batch = apply_random_rotation(input_batch, gt_batch)
 
             
             idx = idx+batch_size

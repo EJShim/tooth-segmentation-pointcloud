@@ -3,6 +3,7 @@ import os
 import random
 import numpy as np
 import utils
+import math
 
 ################################################### Rendering ##########################################################
 ## Initialize RenderWIndow
@@ -86,7 +87,9 @@ if __name__ == "__main__":
     transform = vtk.vtkTransform()
 
     transform.Translate(center[0], center[1], center[2])
-    transform.RotateZ(45)
+    transform.RotateZ(random.randrange(0, 45))
+    transform.RotateY(random.randrange(0, 45))
+    transform.RotateX(random.randrange(0, 45))
     transform.Translate(-center[0], -center[1], -center[2])
     
     transformFilter = vtk.vtkTransformPolyDataFilter()
@@ -94,7 +97,11 @@ if __name__ == "__main__":
     transformFilter.SetTransform(transform)
     transformFilter.Update()
     normalized_poly = transformFilter.GetOutput()
-    
+
+    corner = [0, 0, 0]
+    max = 
+    vtk.vtkOBBTree.ComputeOBB(normalized_poly.GetPoints(), [0,0,0], [0,0,0], [0,0,0], [0,0,0], [0,0,0])
+
 
 
     #normalized_poly = normalizePolydata(normalized_poly)

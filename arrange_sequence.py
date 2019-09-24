@@ -28,14 +28,14 @@ if __name__ == "__main__":
     #Import Input Data.stl')
 
     reader = vtk.vtkSTLReader()
-    reader.SetFileName('./processed/temp.stl')
+    reader.SetFileName('./temp/temp.stl')
     reader.Update()
 
     polydata = reader.GetOutput()
     num_points = polydata.GetNumberOfPoints()    
 
     #Sort Index of Polydata    
-    utils.sort_pointIndex(polydata)
+    utils.ArrangePolyData(polydata)
     
 
     #Show Color
