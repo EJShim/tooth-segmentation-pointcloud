@@ -23,7 +23,7 @@ batch_size = 4
     
 #Import Input Data
 input_poly = utils.ReadSTL('./temp/temp.stl')
-utils.sort_pointIndex(input_poly)
+#utils.sort_pointIndex(input_poly)
 
 
 original_data = []

@@ -38,13 +38,17 @@ optimizer = tf.train.AdamOptimizer(1e-4, 0.5)
 train_op = optimizer.minimize(loss_op)
 
 
+def shuffle_point_sequence(input_batch):
+    return input_batch
+
+
 def apply_random_rotation(input_batch):    
 
     #Add Transform, center-origined
     transform = vtk.vtkTransform()
-    transform.RotateX(random.randrange(-45, 45))
-    transform.RotateY(random.randrange(-45, 45))
-    transform.RotateZ(random.randrange(-45, 45))
+    transform.RotateX(random.randrange(-5, 5))
+    transform.RotateY(random.randrange(-5, 5))
+    transform.RotateZ(random.randrange(-5, 5))
     transform.Update()
 
     
@@ -52,7 +56,6 @@ def apply_random_rotation(input_batch):
     for batch in input_batch:
         result = np.array([*map(transform.TransformPoint, batch.tolist() )])        
         result_batch.append(result)
-
 
     return result_batch
 
